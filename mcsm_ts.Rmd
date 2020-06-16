@@ -1,0 +1,358 @@
+---
+title: "Monte Carlo Simulation mit historischen Zeitreihen"
+author: "WH & FK"
+date: "17. Juni 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(scipen=10000)
+```
+
+# Einführung
+```{r message=FALSE, warning=FALSE}
+# Packages
+library(tidyverse)
+library(tidyquant)
+```
+
+## Wissenschaftliche Datenanalyse
++ [R for Data Science](https://r4ds.had.co.nz/)
++ [Easily Install and Load the 'Tidyverse'](https://cran.r-project.org/web/packages/tidyverse/index.html)
++ [R-Kurs Uni Erfurt: Programmieren mit R](http://htmlpreview.github.io/?https://github.com/wasilios-hariskos/r4ds-erfurt19/blob/master/01_programmingR_base.html)
++ [R-Kurs Uni Erfurt: Datenmanipulation](http://htmlpreview.github.io/?https://github.com/wasilios-hariskos/r4ds-erfurt19/blob/master/02_dataTransformation_dplyr.html)
++ [R-Kurs Uni Erfurt: Datenvisualisierung](http://htmlpreview.github.io/?https://github.com/wasilios-hariskos/r4ds-erfurt19/blob/master/04_dataVisualization_ggplot2.html)
++ [R-Kurs Uni Erfurt: Explorative Datenanalyse](http://htmlpreview.github.io/?https://github.com/wasilios-hariskos/r4ds-erfurt19/blob/master/04_exploratoryDataAnalysis.html)
+
+## Monte Carlo Simulation
++ [R Views: Monte Carlo](https://rviews.rstudio.com/tags/monte-carlo/)
++ [SPDR S&P 500 ETF Trust (SPY)](https://finance.yahoo.com/quote/SPY)
++ [Tidy Quantitative Financial Analysis](https://cran.r-project.org/web/packages/tidyquant/index.html)
+
+
+# Historische Zeitreihe
+
+```{r}
+# Download time series data of SPDR S&P 500 ETF Trust (SPY) from finance.yahoo.com
+daily_ts <- 
+  tq_get(x = "SPY", 
+         from = "1993-01-29")
+
+# Glimpse at the data
+glimpse(daily_ts)
+```
+
+```{r}
+# Check whether R data match information on https://finance.yahoo.com/quote/SPY
+tail(daily_ts)
+```
+
+
+```{r}
+# Visualize data with a line plot
+ggplot(data = daily_ts) +
+  geom_line(mapping = aes(x = date,
+                          y = close))
+```
+
+# Wie hätten sich 10.000 Euro Einmaleinlage Anfang 1993 bis heute entwickelt?
+
+## Jährliche Renditen
+
+```{r}
+# Calculate yearly returns
+yearly_data <-
+  daily_ts %>%
+  tq_transmute(select = close,
+               mutate_fun = periodReturn,
+               period = "yearly",
+               col_rename = "return")
+
+# Print data
+print(yearly_data)
+```
+
+```{r}
+# Visualize yearly returns with a scatterplot
+ggplot(data = yearly_data) +
+  geom_point(mapping = aes(x = date,
+                           y = return))
+```
+
+# Wachstum der Einmaleinlage
+
+```{r}
+# Calculate the growth of a one-time investment over time
+investment = 10000
+
+yearly_data <- 
+  yearly_data %>% 
+  mutate(return_add1 = return + 1,
+         cp_return_add1 = cumprod(return_add1),
+         growth = cp_return_add1 * investment)
+# Print data
+yearly_data
+```
+
+```{r}
+# Visualize growth of investment with a line plot
+ggplot(data = yearly_data) +
+  geom_line(mapping = aes(x = date,
+                           y = growth))
+```
+
+# Wie könnte sich eine heutige Einmaleinlage von 10000 Euro in den nächsten 40 Jahren entwickeln?
+
+Wir benutzen eine Monte Carlo Simulation, um diese Frage zu beantworten.
+
+## Normalverteilung und Jahresrenditen
+
+```{r}
+# Calculate mean yearly return
+mean_yearly_return <- 
+  mean(yearly_data$return)
+
+# Calculate standard deviation of yearly returns
+sd_yearly_return <- 
+  sd(yearly_data$return)
+
+# Print mean and standard deviation
+c(mean_yearly_return, sd_yearly_return)
+```
+
+```{r message=FALSE, warning=FALSE}
+# Histogram of yearly returns and theoretical normal distribution
+ggplot(data = yearly_data) +
+  geom_histogram(mapping = aes(x = return,
+                               y = ..density..)) +
+  stat_function(fun = dnorm,
+                args = list(mean = mean_yearly_return,
+                            sd = sd_yearly_return),
+                color = "red") +
+  xlim(min = mean_yearly_return - 3 * sd_yearly_return, 
+       max = mean_yearly_return + 3 * sd_yearly_return)
+```
+
+
+## Normalverteilung und Monatsrenditen
+
+
+```{r message=FALSE, warning=FALSE}
+# Monthly returns
+monthly_data <-
+  daily_ts %>%
+  tq_transmute(select = close,
+               mutate_fun = periodReturn,
+               period = "monthly",
+               col_rename = "return")
+               
+# Descriptive statistics
+summary(monthly_data)
+               
+# Calculate mean monthly return
+mean_monthly_return <- 
+  mean(monthly_data$return)
+
+# Calculate standard deviation of monthly returns
+sd_monthly_return <- 
+  sd(monthly_data$return)
+
+# Print mean and standard deviation
+c(mean_monthly_return, sd_monthly_return)
+               
+# Histogram of yearly returns and theoretical normal distribution
+ggplot(data = monthly_data) +
+  geom_histogram(mapping = aes(x = return,
+                               y = ..density..)) +
+  stat_function(fun = dnorm,
+                args = list(mean = mean_monthly_return,
+                            sd = sd_monthly_return),
+                color = "red") +
+  xlim(min = mean_monthly_return - 4.1 * sd_monthly_return, 
+       max = mean_monthly_return + 4.1 * sd_monthly_return)               
+```
+
+## Diskussion
+
+Die empirische Verteilung ist linksschief und hat Leptokurtosis (Fat Tails). Für die Monte Carlo Simulation nehmen wir dennoch eine Normalverteilung der Monatsrenditen als ausreichend gute Vereinfachung an. Wenn Sie Interesse haben, dann können Sie diese Annahme verbessern, indem Sie selbständig andere Verteilungen ausprobieren. Dazu können Sie `help(Distributions)` in die Konsole eingeben, um eine Beschreibung von alternativen Verteilungen zu erhalten. In der folgenden Tabelle finden Sie die *Kernnamen* und *Parameter* dieser Verteilungen.
+
+| Kernname | Parameter |
+| -------- |-----------|
+| beta | shape1, shape2 |
+| binom | size, prob |
+| cauchy | location, scale |
+| chisq | df |
+| exp | 1/mean |
+| f | df1, df2 |
+| gamma | shape, 1/scale |
+| geom | prob |
+| hyper | m, n, k |
+| lnorm | mean, sd |
+| logis | logis |
+| norm | mean, sd |
+| pois | lambda |
+| t | df |
+| unif | min, max |
+| weibull | shape |
+
+Indem Sie den Kernnamen einer Funktion mit einem Prefix kombinieren, bekommen Sie eine der vier Funktionen, welche in der folgenden Tabelle gelistet sind (Namen in Englisch):
+
+| Prefix | Funktion |
+|--------|----------|
+| d | cumulative distribution function (cdf) |
+| p | probability density function (pdf) |
+| q | quantile function |
+| r | simulation procedure |
+
+# Monte Carlo Simulation
+
+## Parameter
+
+
+```{r Parameters}
+# Number of Simulations
+num_sim = 10000
+
+# Number of months
+num_months = 30 * 12
+
+# Mean of normal distribution
+mu = mean_monthly_return
+
+# Standard deviation of normal distribution
+sigma = sd_monthly_return
+
+# Investment amount
+investment = 10000
+```
+
+## Datensimulation
+
+```{r Simulated Data}
+# Vector of simulations
+simulation = rep(x = 1:num_sim,
+                each = num_months) %>% 
+  factor()
+
+# Vector of months
+month = rep(x = 1:num_months,
+            times = num_sim)
+
+# Vector von monthly returns
+return <- rnorm(n = num_months * num_sim, 
+                mean = mu, 
+                sd = sigma)
+
+# Put vectors into a tibble (a fancy data.frame)
+sim_data = tibble(simulation, month, return)
+
+# Add column for investment growth over time
+sim_data <- 
+  sim_data %>% 
+  group_by(simulation) %>% 
+  mutate(value = round(cumprod(return + 1) * investment, 4)) %>% 
+  ungroup()
+
+# View simulated data
+# View(sim_data)
+```
+
+## Datenvisualisierung
+
+```{r}
+# Visualize some randomly selected simulations
+rand_sim <- sample(x = 1:num_sim,
+                      size = 10)
+
+ggplot(data = filter(sim_data, simulation %in% rand_sim)) + 
+  geom_line(aes(x = month, 
+             y = value, 
+             color = simulation)) 
+```
+
+## Deskriptive Statistiken zum letzten Monat
+
+```{r}
+# Filter last month of each simulation
+sim_last_month <-
+  sim_data %>%
+  filter(month == num_months)
+
+# Descriptive statistics
+summary(sim_last_month$value)
+
+```
+
+## Exkurs: Boxplot
+
+```{r}
+# Visualize value of last month with a boxplot (scale y-axis log10)
+ggplot(data = sim_last_month) + 
+  geom_boxplot(aes(y = value)) +
+  theme(legend.position = "none") +
+  scale_y_log10()
+```
+
+
+
+
+Optional und bei mehr Interesse an Statistik: Geben Sie `help(geom_boxplot)` in die Konsole ein. In der Beschreibung steht *The boxplot compactly displays the distribution of a continuous variable. It visualises five summary statistics (the median, two hinges and two whiskers), and all "outlying" points individually.* Weiter unten steht bei den *Summary statistics* folgendes: *The lower and upper hinges correspond to the first and third quartiles (the 25th and 75th percentiles).* Frage: Wo befinden sich die Perzentile `p0`, `p25`, `p50`, `p75`, `p100`, welche durch die Funktion `skim()` ausgeben wurden? Bitte beachten Sie noch folgenden Satz in der Beschreibung *Length of the whiskers as multiple of IQR. Defaults to 1.5.* Nutzen Sie `help(IQR)` um mehr über den Interquartilsabstand zu erfahren. Unten finden Sie zudem eine Tabelle, die Sie nutzen können um die Zusammenhange zwischen der numerischen Zusammenfassung der Daten mit `summary()`und der grafischen Zusammenfassung der Daten mit `geom_boxplot` besser nachvollziehen zu können.
+
+
+
+|Kennwert |	Beschreibung | Lage im Box-Plot |
+|---------|--------------|------------------|
+|Minimum | Kleinster Wert = `Min.` |	Ende des unteren Whiskers oder der südlichste Ausreißer |
+|Unteres Quartil |	25 % der Datenwerte sind kleiner oder gleich `1st Qu.` |	Beginn der Box bei `1st Qu.`|
+|Median |	50 % der Datenwerte sind kleiner oder gleich `Median` | Fetter Strich innerhalb der Box |
+|Oberes Quartil |	75 % der Datenwerte sind kleiner oder gleich `3rd Qu.` | Ende der Box |
+|Maximum | Größter Wert = `Max.` |	Ende des oberen Whiskers oder der nördlichste Ausreißer |
+|Spannweite| Gesamter Wertebereich des Datensatzes `Max. - Min.`	| Länge des gesamten Box-Plots (inklusive Ausreißer) |
+|Interquartilsabstand |	Wertebereich, in dem sich die mittleren 50 % der Daten befinden `3rd Qu. - 1st Qu.`| Ausdehnung der Box|
+
+## Worst Case, erstes Quartil, Median, drittes Quartil, Best Case
+
+```{r}
+# Find simulation with Min., 1st Qu., Median, 3rd Qu. und Max. of last month 
+low2high_value <- 
+  sim_last_month %>% 
+  arrange(value)
+
+sim_min_last_value <- as.numeric(low2high_value$simulation[1])
+sim_1stquartil_last_value <- as.numeric(low2high_value$simulation[num_sim * 1/4 + 1])
+sim_median_last_value <- as.numeric(low2high_value$simulation[num_sim * 1/2])
+sim_3rdquartil_last_value <- as.numeric(low2high_value$simulation[num_sim * 3/4])
+sim_max_last_value <- as.numeric(low2high_value$simulation[num_sim])
+
+# Remove all other simulations
+sim_data_cases <- 
+  sim_data %>% 
+  filter(simulation %in% c(sim_min_last_value,
+                           sim_1stquartil_last_value,
+                           sim_median_last_value,
+                           sim_3rdquartil_last_value,
+                           sim_max_last_value))
+
+# Check whether everything is as intendend (compare to descriptive statistics above)
+sim_data_cases %>% 
+  filter(month == num_months)
+```
+
+
+```{r}
+# Visualize the cases min, 1st quartil, median, 3rd quartil, and max with a line plot
+ggplot(data = sim_data_cases) + 
+  geom_line(aes(x = month, 
+                y = value,
+                color = simulation)) +
+  scale_y_log10()
+```
+
+
+
+
+
+
+
+
