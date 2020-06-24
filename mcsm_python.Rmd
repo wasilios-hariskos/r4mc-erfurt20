@@ -3,7 +3,7 @@ title: "Monte Carlo Simulation mit Python in RStudio"
 author: "WH & FK"
 date: "24. Juni 2020"
 output:
-  html_document: default
+  html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -36,12 +36,14 @@ library(reticulate)
 
 ```{r}
 math <- import("math")
-math$pi
+x <- math$pi
+x
 ```
 
 
 ```{r}
-math$sqrt(2)
+y <- math$sqrt(2)
+y
 ```
 
 ## Python Code Chunks in R benutzen
@@ -57,7 +59,7 @@ def my_func():
 
 # Draw some random numbers    
 for i in range(10):
-    print("Number " + str(i) + " is " + str(my_func()))
+    print("Number " + str(i + 1) + " is " + str(my_func()))
 
 ```
 
@@ -75,16 +77,16 @@ for i in range(10):
 ## Das Rouletterad
 ```{python}
 # Roulette wheel
-def rouletteWheel():
-  rouletteNumber = random.randint(0, 36)
+def rouletteWheel(low, high):
+  rouletteNumber = random.randint(low, high)
   return rouletteNumber
 
 # Test: Turn the Roulette wheel 10 times
-x = 1
-while x <= 10:
-  result = rouletteWheel()
+iteration = 1
+while iteration <= 10:
+  result = rouletteWheel(low=0, high=36)
   print(result)
-  x += 1
+  iteration += 1
 ```
 
 ## Der Spieler
@@ -110,7 +112,7 @@ def player(funds, bet_size, num_bets):
   count_bet = 1
   
   while count_bet <= count:
-    if rouletteWheel():
+    if rouletteWheel() == True:
       value += bet_value
     else:
       value -= bet_value
@@ -131,6 +133,7 @@ def rouletteWheel():
     return True
   else:
     return False
+    
 # Final Funds of player
 def player(funds, bet_size, num_bets):
   value = funds
@@ -153,7 +156,8 @@ def player(funds, bet_size, num_bets):
 # Simulation of final funds of multiple players
 playerID = 1
 while playerID <= 100:
-  print('Final Funds of player', playerID, 'are', player(10000, 100,5000))
+  print('Final Funds of player', playerID, 'are', 
+  player(funds=10000, bet_size=100, num_bets=5000))
   playerID += 1
 ```
 
@@ -172,7 +176,7 @@ def player(funds, bet_size, num_bets):
   bet_value = bet_size
   count = num_bets
     
-  betID = []
+  betID = [] 
   AccountValue = []
     
   count_bet = 1
@@ -255,6 +259,9 @@ while count_bet <= count:
       AccountValue.append(value)
       
   count_bet += 1
+  
+#BetID 
+#AccountValue
 ```
 
 
@@ -269,6 +276,7 @@ AccountSize <- py$AccountValue
 
 ## Beispiel: Zugriff auf R Objekte im Python Code
 
+
 ```{python}
 plt.plot(r.NumBets, r.AccountSize);
 plt.ylabel('Account Value')
@@ -278,9 +286,9 @@ plt.xlabel('Number of Bets')
 # Bonus: Python (und R) lernen auf Datacamp
 
 + [Datacamp](https://support.datacamp.com/hc/en-us/articles/360001548914-DataCamp-for-the-Classroom-An-Overview)
-+ (Introduction to Python](https://learn.datacamp.com/courses/intro-to-python-for-data-science)
-+ (Intermediate Python](https://learn.datacamp.com/courses/intermediate-python)
-+ (Quantitative Risk Management in Python](https://learn.datacamp.com/courses/quantitative-risk-management-in-python)
-+ (Statistical Simulation in Python)(https://learn.datacamp.com/courses/statistical-simulation-in-python)
-+ (Monte Carlo Simulation with Python](https://www.datacamp.com/community/news/monte-carlo-simulation-with-python-muppz8p2ckh)
++ [Introduction to Python](https://learn.datacamp.com/courses/intro-to-python-for-data-science)
++ [Intermediate Python](https://learn.datacamp.com/courses/intermediate-python)
++ [Quantitative Risk Management in Python](https://learn.datacamp.com/courses/quantitative-risk-management-in-python)
++ [Statistical Simulation in Python](https://learn.datacamp.com/courses/statistical-simulation-in-python)
++ [Monte Carlo Simulation with Python](https://www.datacamp.com/community/news/monte-carlo-simulation-with-python-muppz8p2ckh)
 
