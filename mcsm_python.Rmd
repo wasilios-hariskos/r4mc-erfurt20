@@ -1,0 +1,286 @@
+---
+title: "Monte Carlo Simulation mit Python in RStudio"
+author: "WH & FK"
+date: "24. Juni 2020"
+output:
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
+```
+
+```{python include=FALSE}
+# Hack um Knit zu ermöglichen. Findet das Plugin sonst nicht
+import os
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] ='C:/Users/hariskos/AppData/Local/r-miniconda/envs/r-reticulate/Library/plugins/platforms/'
+```
+
+
+# Einführung
+
++ [Python in R Markdown nutzen](https://rpubs.com/onduuuu/python_in_r)
++ [Python Online Tutorial](https://docs.python.org/3.8/tutorial/index.html)
++ [reticulate: Interface to 'Python](https://rdrr.io/cran/reticulate/)
++ [Miniconda](https://docs.conda.io/en/latest/miniconda.html)
++ [Installing Python Packages](https://rstudio.github.io/reticulate/articles/python_packages.html)
+
+## Verbinde Python und R
+```{r}
+# install.packages("reticulate")
+# py_install("matplotlib")
+library(reticulate)
+```
+
+## Python Module in R
+
+```{r}
+math <- import("math")
+math$pi
+```
+
+
+```{r}
+math$sqrt(2)
+```
+
+## Python Code Chunks in R benutzen
+
+```{python}
+# Module
+import random
+
+# Random number generator function
+def my_func():
+    my_num = random.randrange(1, 10)
+    return my_num
+
+# Draw some random numbers    
+for i in range(10):
+    print("Number " + str(i) + " is " + str(my_func()))
+
+```
+
+# Monte Carlo Simulation mit Python
+
++ [Monte Carlo simulation with Python](https://www.youtube.com/playlist?list=PLQVvvaa0QuDdhOnp-FnVStDsALpYk2hk0)
+
+## Roulette
++ Annahmen
+  + Spieler wettet auf Niedrig
+  + Bei den niedrigen Zahlen 1-18 verdoppelt der Spieler seinen Einsatz
+  + Bei den hohen Zahlen 19-36 verliert der Spieler seinen Einsatz
+  + Bei der Zahl 0 gewinnt die Spielbank und der Spieler verliert seinen Einsatz
+
+## Das Rouletterad
+```{python}
+# Roulette wheel
+def rouletteWheel():
+  rouletteNumber = random.randint(0, 36)
+  return rouletteNumber
+
+# Test: Turn the Roulette wheel 10 times
+x = 1
+while x <= 10:
+  result = rouletteWheel()
+  print(result)
+  x += 1
+```
+
+## Der Spieler
+```{python}
+# Add payoff to rouletteWheel (win = True)
+def rouletteWheel():
+  rouletteNumber = random.randint(0, 36)
+  if 1 <= rouletteNumber <= 18:
+    print('Roulette number was ' + str(rouletteNumber))
+    print('Player won 100 euro')
+    return True
+  else:
+    print('Number was ' + str(rouletteNumber))
+    print('Player lost 100 euro')
+    return False
+
+# Create player with parameters funds, bet_size, num_bets
+def player(funds, bet_size, num_bets):
+  value = funds
+  bet_value = bet_size
+  count = num_bets
+  
+  count_bet = 1
+  
+  while count_bet <= count:
+    if rouletteWheel():
+      value += bet_value
+    else:
+      value -= bet_value
+    
+    count_bet += 1
+    print ('Funds in Euro are ', value)
+    
+player(funds = 10000, bet_size = 100, num_bets = 10)
+```
+
+## Simulation mehrerer Spieler
+
+```{python}
+# Roulette Wheel
+def rouletteWheel():
+  rouletteNumber = random.randint(0, 36)
+  if 1 <= rouletteNumber <= 18:
+    return True
+  else:
+    return False
+# Final Funds of player
+def player(funds, bet_size, num_bets):
+  value = funds
+  bet_value = bet_size
+  count = num_bets
+  
+  count_bet = 1
+  while count_bet <= count:
+    if rouletteWheel():
+      value += bet_value
+    else:
+      value -= bet_value
+    
+    count_bet += 1
+    
+    if value == 0:
+      break
+      
+  return value
+# Simulation of final funds of multiple players
+playerID = 1
+while playerID <= 100:
+  print('Final Funds of player', playerID, 'are', player(10000, 100,5000))
+  playerID += 1
+```
+
+## Matplotlib
+
+```{python}
+import matplotlib
+import matplotlib.pyplot as plt
+```
+
+### Kontoverlauf speichern und visualisieren
+
+```{python}
+def player(funds, bet_size, num_bets):
+  value = funds
+  bet_value = bet_size
+  count = num_bets
+    
+  betID = []
+  AccountValue = []
+    
+  count_bet = 1
+  while count_bet <= count:
+    if value <= 0:
+      betID.append(count_bet)
+      AccountValue.append(value)
+    else:
+      if rouletteWheel():
+        value += bet_value
+        betID.append(count_bet)
+        AccountValue.append(value)
+      else:
+        value -= bet_value
+        betID.append(count_bet)
+        AccountValue.append(value)
+       
+    count_bet += 1
+    
+  plt.plot(betID, AccountValue)
+```
+
+### 100 Wetten
+```{python}
+playerID = 1
+while playerID <= 100:
+  player(funds=10000, bet_size=100, num_bets=100)
+  playerID += 1
+  
+plt.ylabel('Account Value')
+plt.xlabel('Number of Bets')
+```
+
+### 1000 Wetten
+```{python}
+playerID = 1
+while playerID <= 100:
+  player(funds=10000, bet_size=100, num_bets=1000)
+  playerID += 1
+  
+plt.ylabel('Account Value')
+plt.xlabel('Number of Bets')
+```
+
+### 10000 Wetten
+
+```{python}
+playerID = 1
+while playerID <= 100:
+  player(funds=10000, bet_size=100, num_bets=10000)
+  playerID += 1
+  
+plt.ylabel('Account Value')
+plt.xlabel('Number of Bets')
+```
+
+## Beispiel: Zugriff auf Python Objekte im R Code
+
+```{python}
+value = 10000
+bet_value = 100
+count = 10000
+
+BetID = [] 
+AccountValue = [] 
+
+count_bet = 1
+while count_bet <= count:
+  if value <= 0:
+    BetID.append(count_bet)
+    AccountValue.append(value)
+  else:
+    if rouletteWheel():
+      value += bet_value
+      BetID.append(count_bet)
+      AccountValue.append(value)
+    else:
+      value -= bet_value
+      BetID.append(count_bet)
+      AccountValue.append(value)
+      
+  count_bet += 1
+```
+
+
+```{r}
+plot(x = py$BetID, 
+     y = py$AccountValue,
+     type = "l")
+
+NumBets <- py$BetID
+AccountSize <- py$AccountValue
+```
+
+## Beispiel: Zugriff auf R Objekte im Python Code
+
+```{python}
+plt.plot(r.NumBets, r.AccountSize);
+plt.ylabel('Account Value')
+plt.xlabel('Number of Bets')
+```
+
+# Bonus: Python (und R) lernen auf Datacamp
+
++ [Datacamp](https://support.datacamp.com/hc/en-us/articles/360001548914-DataCamp-for-the-Classroom-An-Overview)
++ (Introduction to Python](https://learn.datacamp.com/courses/intro-to-python-for-data-science)
++ (Intermediate Python](https://learn.datacamp.com/courses/intermediate-python)
++ (Quantitative Risk Management in Python](https://learn.datacamp.com/courses/quantitative-risk-management-in-python)
++ (Statistical Simulation in Python)(https://learn.datacamp.com/courses/statistical-simulation-in-python)
++ (Monte Carlo Simulation with Python](https://www.datacamp.com/community/news/monte-carlo-simulation-with-python-muppz8p2ckh)
+

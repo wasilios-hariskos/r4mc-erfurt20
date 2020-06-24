@@ -102,7 +102,7 @@ ggplot(data = yearly_data) +
                            y = growth))
 ```
 
-# Wie könnte sich eine heutige Einmaleinlage von 10000 Euro in den nächsten 40 Jahren entwickeln?
+# Wie könnte sich eine heutige Einmaleinlage von 10000 Euro in den nächsten 30 Jahren entwickeln?
 
 Wir benutzen eine Monte Carlo Simulation, um diese Frage zu beantworten.
 
@@ -255,7 +255,7 @@ sim_data <-
   ungroup()
 
 # View simulated data
-# View(sim_data)
+View(sim_data)
 ```
 
 ## Datenvisualisierung
@@ -282,6 +282,8 @@ sim_last_month <-
 # Descriptive statistics
 summary(sim_last_month$value)
 
+sim_last_month
+
 ```
 
 ## Exkurs: Boxplot
@@ -297,7 +299,7 @@ ggplot(data = sim_last_month) +
 
 
 
-Optional und bei mehr Interesse an Statistik: Geben Sie `help(geom_boxplot)` in die Konsole ein. In der Beschreibung steht *The boxplot compactly displays the distribution of a continuous variable. It visualises five summary statistics (the median, two hinges and two whiskers), and all "outlying" points individually.* Weiter unten steht bei den *Summary statistics* folgendes: *The lower and upper hinges correspond to the first and third quartiles (the 25th and 75th percentiles).* Frage: Wo befinden sich die Perzentile `p0`, `p25`, `p50`, `p75`, `p100`, welche durch die Funktion `skim()` ausgeben wurden? Bitte beachten Sie noch folgenden Satz in der Beschreibung *Length of the whiskers as multiple of IQR. Defaults to 1.5.* Nutzen Sie `help(IQR)` um mehr über den Interquartilsabstand zu erfahren. Unten finden Sie zudem eine Tabelle, die Sie nutzen können um die Zusammenhange zwischen der numerischen Zusammenfassung der Daten mit `summary()`und der grafischen Zusammenfassung der Daten mit `geom_boxplot` besser nachvollziehen zu können.
+Optional und bei mehr Interesse an Statistik: Geben Sie `help(geom_boxplot)` in die Konsole ein. In der Beschreibung steht *The boxplot compactly displays the distribution of a continuous variable. It visualises five summary statistics (the median, two hinges and two whiskers), and all "outlying" points individually.* Weiter unten steht bei den *Summary statistics* folgendes: *The lower and upper hinges correspond to the first and third quartiles (the 25th and 75th percentiles).* Bitte beachten Sie noch folgenden Satz in der Beschreibung *Length of the whiskers as multiple of IQR. Defaults to 1.5.* Nutzen Sie `help(IQR)` um mehr über den Interquartilsabstand zu erfahren. Unten finden Sie zudem eine Tabelle, die Sie nutzen können um die Zusammenhange zwischen der numerischen Zusammenfassung der Daten mit `summary()`und der grafischen Zusammenfassung der Daten mit `geom_boxplot` besser nachvollziehen zu können.
 
 
 
