@@ -28,8 +28,8 @@ os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] ='C:/Users/hariskos/AppData/Local/r-mi
 ## Verbinde Python und R
 ```{r}
 # install.packages("reticulate")
-# py_install("matplotlib")
 library(reticulate)
+# py_install("matplotlib")
 ```
 
 ## Python Module in R
